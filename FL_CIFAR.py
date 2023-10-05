@@ -6,20 +6,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
-import torch
 
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# use Mnist
-# input_size = 784
-# hidden_size = 500
 num_classes = 10
 num_epochs = 5
 batch_size = 100
-learning_rate = 0.001
-mu = 0.01
 
 train_dataset = datasets.CIFAR10(root='./dataset',train=True,transform=transforms.ToTensor(),download=True)
 train_loader = dataloader.DataLoader(dataset=train_dataset, batch_size=batch_size,shuffle=True)
@@ -29,7 +23,6 @@ train_loader = dataloader.DataLoader(dataset=train_dataset, batch_size=batch_siz
 test_dataset = Subset(train_dataset,range(0,2000))
 test_loader = dataloader.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-# use Cifar
 
 def print_model_parameters(model):
     for name, param in model.named_parameters():
@@ -60,18 +53,11 @@ class NeuralNet(nn.Module):
         self.fc1 = nn.Linear(64 * 8 * 8, 128)
         self.fc2 = nn.Linear(128, 10)
 
-        # self.fc1.weight = Parameter(com_fc1_w)
-        # self.fc2.weight = Parameter(com_fc2_w)
-        # self.conv1.weight = Parameter(com_conv1_w)
-        # self.conv2.weight = Parameter(com_conv2_w)
-        # nn.init.constant_(self.fc1.bias, val=0)
-        # nn.init.constant_(self.fc2.bias, val=0)
-
     def forward(self, x):
-        x = x.view(-1, 3, 32, 32)  # 调整输入形状为(batch_size, 1, 28, 28)
+        x = x.view(-1, 3, 32, 32)  # Reshape the input shape to (batch_size, 1, 28, 28).
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(x.size(0), -1)  # 展平特征图
+        x = x.view(x.size(0), -1)  # Flatten the feature map
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
@@ -87,13 +73,6 @@ def client_update(client_model, optimizer, train_loader, epoch):
 
             # Forward pass
             outputs = client_model(images)
-
-            # compute proximal_term
-            # proximal_term = 0.0
-            # for w, w_t in zip(model.parameters(), global_model.parameters()):
-            #     proximal_term += (w - w_t).norm(2)
-
-            # loss = criterion(outputs , labels) + (mu / 2) * proximal_term
 
             loss = criterion(outputs, labels)
 
@@ -143,7 +122,7 @@ def evaluate(globel_model, test_loader):
 if __name__ == "__main__":
 
 
-    global_model = NeuralNet().to(device) # 初始化全局模型
+    global_model = NeuralNet().to(device) # initialize the global model
 
     optimizer = optim.SGD(global_model.parameters(), lr=0.01, momentum=0.9)
     criterion = nn.CrossEntropyLoss()
